@@ -1,3 +1,4 @@
+local c=game:GetService("CoreGui").CloneMenu.TopRight.CoinsFrame.CoinsDisplay.Coins;for _,v in ipairs(c:GetChildren())do if v:IsA("UIGradient")then v:Destroy()end end;c.TextColor3=Color3.fromRGB(115,231,101)
 game:GetService("CoreGui").CloneMenu.TopRight.CoinsFrame.CoinsDisplay.CoinImage.Image = "rbxassetid://8659337867"
 
 game:GetService("CoreGui").CloneMenu.TopRight.CoinsFrame.CoinsDisplay.Coins.TextColor3 = Color3.fromRGB(231, 226, 154)
