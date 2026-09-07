@@ -1,29 +1,35 @@
-local CloneMenu = game.Players.LocalPlayer.PlayerGui.MenuGui:Clone()
-CloneMenu.DisplayOrder = 0
-CloneMenu.Name = "CloneMenu"
-local ObjectsToRemove = {
-	"Menu",
-	"Back",
-	"Bought",
-	"Close",
-	"Deselect",
-	"Favorite",
-	"Open",
-	"Select",
-	"Swap",
-	"ToyTemplates",
-	"UnFavorite",
-	"View",
-	"MenuAndToysNavigation",
-}
+local CloneMenu = game:GetService("CoreGui"):FindFirstChild("CloneMenu")
 
-for _, name in ipairs(ObjectsToRemove) do
-	local obj = CloneMenu:FindFirstChild(name)
-	if obj then
-		obj:Destroy()
+if not CloneMenu then
+	CloneMenu = game.Players.LocalPlayer.PlayerGui.MenuGui:Clone()
+	CloneMenu.DisplayOrder = 0
+	CloneMenu.Name = "CloneMenu"
+
+	local ObjectsToRemove = {
+		"Menu",
+		"Back",
+		"Bought",
+		"Close",
+		"Deselect",
+		"Favorite",
+		"Open",
+		"Select",
+		"Swap",
+		"ToyTemplates",
+		"UnFavorite",
+		"View",
+		"MenuAndToysNavigation",
+	}
+
+	for _, name in ipairs(ObjectsToRemove) do
+		local obj = CloneMenu:FindFirstChild(name)
+		if obj then
+			obj:Destroy()
+		end
 	end
+
+	CloneMenu.Parent = game:GetService("CoreGui")
 end
-CloneMenu.Parent = game:GetService("CoreGui") 
 
 
 local original = game:GetService("Players").LocalPlayer.PlayerGui.MenuGui.TopRight
@@ -48,61 +54,66 @@ end
 
 original.BackgroundTransparency = 1
 
-task.spawn(function()
-    
-    local Players = game:GetService("Players")
-    local RunService = game:GetService("RunService")
-    local Stats = game:GetService("Stats")
 
-    local player = Players.LocalPlayer
+if not getgenv().CloneMenuStatsRunning then
+	getgenv().CloneMenuStatsRunning = true
 
-    -- Оригинальные коины
-    local OriginalCoins = player.PlayerGui.MenuGui.TopRight.CoinsFrame.CoinsDisplay.Coins
+	task.spawn(function()
+	    
+	    local Players = game:GetService("Players")
+	    local RunService = game:GetService("RunService")
+	    local Stats = game:GetService("Stats")
 
-    -- Клон, куда выводим информацию
-    local CloneCoins = game:GetService("CoreGui").CloneMenu.TopRight.CoinsFrame.CoinsDisplay.Coins
+	    local player = Players.LocalPlayer
 
-    local FPS = 0
-    local Frames = 0
-    local Ping = 0
-    local Time = ""
+	    -- Оригинальные коины
+	    local OriginalCoins = player.PlayerGui.MenuGui.TopRight.CoinsFrame.CoinsDisplay.Coins
 
-    task.spawn(function()
-        while true do
-            task.wait(1)
+	    -- Клон, куда выводим информацию
+	    local CloneCoins = game:GetService("CoreGui").CloneMenu.TopRight.CoinsFrame.CoinsDisplay.Coins
 
-            FPS = Frames
-            Frames = 0
+	    local FPS = 0
+	    local Frames = 0
+	    local Ping = 0
+	    local Time = ""
 
-            Ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-            Time = os.date("%H:%M:%S")
-        end
-    end)
+	    task.spawn(function()
+	        while true do
+	            task.wait(1)
 
-    local Frames = 0
-    local FPS = 0
-    
-    RunService.RenderStepped:Connect(function()
-        Frames += 1
-    end)
-    
-    task.spawn(function()
-        while task.wait(1) do
-            FPS = Frames
-            Frames = 0
-    
-            Ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-            Time = os.date("%H:%M:%S")
-    
-            local Coins = OriginalCoins.Text:gsub("%D", "")
-    
-            CloneCoins.Text = string.format(
-                "Coins: %s\nFPS: %d\nPing: %d ms\nTime: %s",
-                Coins,
-                FPS,
-                Ping,
-                Time
-            )
-        end
-    end)
-end)
+	            FPS = Frames
+	            Frames = 0
+
+	            Ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+	            Time = os.date("%H:%M:%S")
+	        end
+	    end)
+
+	    local Frames = 0
+	    local FPS = 0
+	    
+	    RunService.RenderStepped:Connect(function()
+	        Frames += 1
+	    end)
+	    
+	    task.spawn(function()
+	        while task.wait(1) do
+	            FPS = Frames
+	            Frames = 0
+	    
+	            Ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+	            Time = os.date("%H:%M:%S")
+	    
+	            local Coins = OriginalCoins.Text:gsub("%D", "")
+	    
+	            CloneCoins.Text = string.format(
+	                "Coins: %s\nFPS: %d\nPing: %d ms\nTime: %s",
+	                Coins,
+	                FPS,
+	                Ping,
+	                Time
+	            )
+	        end
+	    end)
+	end)
+end
