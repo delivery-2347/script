@@ -1,0 +1,9 @@
+--local role = {
+--    owner = "Owner",
+--    friend = "Friend",
+--    tester = "Tester",
+--    cocksucker = "cocksucker"
+--}
+return {
+    [4110423563] = "owner",
+}
