@@ -1,4 +1,3 @@
-
 local Library = {}
 local TS = game:GetService("TweenService")
 local UIS = game:GetService("UserInputService")
@@ -489,8 +488,9 @@ local function GetTheme(cfg)
         return mapped
     end
 
-    if isfile(Library.ThemeFolder .. "/" .. tostring(cfg) .. ".json") then
-        local content = readfile(Library.ThemeFolder .. "/" .. tostring(cfg) .. ".json")
+    local themePath = Library.ThemeFolder .. "/" .. tostring(cfg) .. ".json"
+    if isfile(themePath) then
+        local content = readfile(themePath)
         local parsed = HS:JSONDecode(content)
         local restored = {}
         for k, v in pairs(parsed) do
@@ -1172,18 +1172,23 @@ function Library:CreateWindow(Settings)
         end
     end
 
+    -- Исправлено: поддержка путей со слэшами обоих типов (\ и /)
     function Library:GetThemes()
         local list = {}
         if isfolder(Library.ThemeFolder) then
             for _, file in pairs(listfiles(Library.ThemeFolder)) do
                 if file:sub(-5) == ".json" then
-                    table.insert(list, (file:match("([^/]+)%.json$") or file))
+                    local name = file:match("([^/\\]+)%.json$")
+                    if name then
+                        table.insert(list, name)
+                    end
                 end
             end
         end
         return list
     end
     
+    -- Исправлено: корректное извлечение имени файла на Windows и Mac/Linux
     function Library:GetConfigs()
         local list = {}
         if isfolder(Library.ConfigFolder) then
@@ -1193,7 +1198,10 @@ function Library:CreateWindow(Settings)
                         return HS:JSONDecode(readfile(file))
                     end)
                     if success and type(decoded) == "table" and decoded["Settings_Identifier"] == Title then
-                        table.insert(list, file:match("([^/]+)%.json$") or file)
+                        local name = file:match("([^/\\]+)%.json$")
+                        if name then
+                            table.insert(list, name)
+                        end
                     end
                 end
             end
@@ -1201,7 +1209,14 @@ function Library:CreateWindow(Settings)
         return list
     end
 
+    local LoadDropCfg -- Ссылка на дропдаун конфигов для автообновления
+
     function Library:SaveConfig(Name)
+        if not Name or Name == "" then
+            Library:Notify({Title = "Save Error", Content = "Config name cannot be empty", Duration = 3})
+            return
+        end
+
         local ConfigToSave = {}
         for flag, value in pairs(Library.Flags) do
             if string.sub(flag, 1, 9) ~= "Settings_" or Library.KeybindFlags[flag] or flag == "Settings_ToggleKey" then
@@ -1215,12 +1230,16 @@ function Library:CreateWindow(Settings)
             local path = Library.ConfigFolder .. "/" .. Name .. ".json"
             writefile(path, json)
             Library:Notify({Title = "Config Saved", Content = "Successfully saved " .. Name, Duration = 3})
+            if LoadDropCfg then
+                LoadDropCfg:Refresh(Library:GetConfigs())
+            end
         else
             Library:Notify({Title = "Save Error", Content = "Failed to encode config data", Duration = 3})
         end
     end
 
     function Library:LoadConfig(Name)
+        if not Name or Name == "" then return end
         local path = Library.ConfigFolder .. "/" .. Name .. ".json"
         if isfile(path) then
             Library.IsLoadingConfig = true
@@ -1241,14 +1260,20 @@ function Library:CreateWindow(Settings)
             else
                 Library:Notify({Title = "Config Error", Content = "Corrupted JSON file", Duration = 3})
             end
+        else
+            Library:Notify({Title = "Config Error", Content = "File does not exist: " .. tostring(Name), Duration = 3})
         end
     end
 
     function Library:DeleteConfig(Name)
+        if not Name or Name == "" then return end
         local path = Library.ConfigFolder .. "/" .. Name .. ".json"
         if isfile(path) then
             delfile(path)
             Library:Notify({Title = "Config Deleted", Content = "Deleted " .. Name, Duration = 3})
+            if LoadDropCfg then
+                LoadDropCfg:Refresh(Library:GetConfigs())
+            end
         end
     end
 
@@ -1563,9 +1588,6 @@ function Library:CreateWindow(Settings)
         ZIndex = 1
     })
 
-    -- ==========================================
-    --  МАСКОТ / ДЕКОРАЦИЯ СВЕРХУ (КАРТИНКА / ВИДЕО)
-    -- ==========================================
     if Config.Mascot and (Config.Mascot.Enabled ~= false) then
         local mCfg = Config.Mascot
         local mType = string.lower(mCfg.Type or "Image")
@@ -2605,9 +2627,12 @@ function Library:CreateWindow(Settings)
                 Library.Items[Flag] = {Set = Update}
             end
 
+            -- Исправлено: сохранение флага при вводе текста в CreateInput
             function Elements:CreateInput(Cfg)
                 ElementOrder = ElementOrder + 1
                 local Flag = Cfg.Flag or Cfg.Name
+                Library.Flags[Flag] = Cfg.Default or ""
+
                 local Frame = Create("Frame", {
                     Parent = TargetParent,
                     Size = UDim2.new(1, 0, 0, 34),
@@ -2687,17 +2712,15 @@ function Library:CreateWindow(Settings)
                 end)
 
                 local function Update(val)
-                    Box.Text = val
+                    Box.Text = tostring(val)
+                    Library.Flags[Flag] = tostring(val) -- Теперь значение обязательно сохраняется в Flags
                     if Cfg.Callback then
-                        Cfg.Callback(val)
+                        Cfg.Callback(tostring(val))
                     end
                 end
                 
-                if Cfg.Default then
-                    Library.Flags[Flag] = Cfg.Default
-                    if Cfg.Callback then
-                        task.spawn(Cfg.Callback, Cfg.Default)
-                    end
+                if Cfg.Default and Cfg.Callback then
+                    task.spawn(Cfg.Callback, Cfg.Default)
                 end
                 
                 Box.FocusLost:Connect(function()
@@ -2707,6 +2730,7 @@ function Library:CreateWindow(Settings)
                 Library.Items[Flag] = {Set = Update}
             end
 
+            -- Исправлено: сохранение флага при создании и исправлена опечатка hoverTweenBtn
             function Elements:CreateDropdown(Cfg)
                 ElementOrder = ElementOrder + 1
                 local Flag = Cfg.Flag or Cfg.Name
@@ -2714,6 +2738,9 @@ function Library:CreateWindow(Settings)
                 local Selected = Cfg.Default
                 local Options = Cfg.Items or {}
                 
+                -- Сохраняем флаг по умолчанию сразу
+                Library.Flags[Flag] = Selected
+
                 local Drop = Create("TextButton", {
                     Parent = TargetParent,
                     Size = UDim2.new(1, 0, 0, 34),
@@ -2781,11 +2808,11 @@ function Library:CreateWindow(Settings)
                 
                 local function Update(val) 
                     Selected = val 
-                    Title.Text = (Cfg.Name or "Dropdown") .. " - " .. tostring(Selected) 
+                    Title.Text = (Cfg.Name or "Dropdown") .. (Selected and " - " .. tostring(Selected) or "")
+                    Library.Flags[Flag] = val
                     if Cfg.Callback then
                         Cfg.Callback(val)
                     end
-                    Library.Flags[Flag] = val
                 end
 
                 local function RefreshList(newOptions)
@@ -2837,7 +2864,8 @@ function Library:CreateWindow(Settings)
                             hoverTweenBtn:Play()
                         end)
                         Btn.MouseLeave:Connect(function()
-                            if hoverTweenBtn then hoverTweenBind:Cancel() end
+                            -- Исправлено: заменена опечатка hoverTweenBind на hoverTweenBtn
+                            if hoverTweenBtn then hoverTweenBtn:Cancel() end
                             leaveTweenBtn = TS:Create(Btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.8, TextColor3 = SelectedTheme.TextDark})
                             leaveTweenBtn:Play()
                         end)
@@ -3144,7 +3172,7 @@ function Library:CreateWindow(Settings)
                 
                 Library.Items[Flag] = {
                     Set = function(t)
-                        if type(t) == "table" then
+                        if type(t) == "table" and t.R then
                             Update(Color3.new(t.R, t.G, t.B))
                         else
                             Update(t)
@@ -3607,7 +3635,7 @@ function Library:CreateWindow(Settings)
         end
     })
 
-    local LoadDropCfg = ConfigBlock:CreateDropdown({
+    LoadDropCfg = ConfigBlock:CreateDropdown({
         Name = "Load Config",
         Flag = "Settings_CfgLoad",
         Items = Library:GetConfigs(),
@@ -3623,7 +3651,7 @@ function Library:CreateWindow(Settings)
         Name = "Delete Selected Config",
         Callback = function()
             local sel = LoadDropCfg:Get()
-            if sel and isfile(Library.ConfigFolder .. "/" .. sel .. ".json") then
+            if sel then
                 Library:DeleteConfig(sel)
             end
         end
@@ -3700,6 +3728,8 @@ function Library:CreateWindow(Settings)
     local ThemeBlock = SettingsTab:CreateBlock({Name = "Theme Manager", Side = "Right"})
     
     local ThemeNameInput = "MyTheme"
+    local LoadDrop -- Ссылка для обновления тем
+
     ThemeBlock:CreateInput({
         Name = "Theme Name",
         Flag = "Settings_ThemeName",
@@ -3732,10 +3762,13 @@ function Library:CreateWindow(Settings)
             }
             writefile(Library.ThemeFolder .. "/" .. ThemeNameInput .. ".json", HS:JSONEncode(ThemeConfig))
             Library:Notify({Title = "Theme Saved", Content = "Saved as " .. ThemeNameInput})
+            if LoadDrop then
+                LoadDrop:Refresh(Library:GetThemes())
+            end
         end
     })
 
-    local LoadDrop = ThemeBlock:CreateDropdown({
+    LoadDrop = ThemeBlock:CreateDropdown({
         Name = "Load Theme",
         Flag = "Settings_ThemeLoad",
         Items = Library:GetThemes(),
@@ -3796,6 +3829,7 @@ function Library:CreateWindow(Settings)
             if selected and isfile(Library.ThemeFolder .. "/" .. selected .. ".json") then
                 delfile(Library.ThemeFolder .. "/" .. selected .. ".json")
                 Library:Notify({Title = "Theme Deleted", Content = "Deleted " .. selected})
+                LoadDrop:Refresh(Library:GetThemes())
             else
                 Library:Notify({Title = "Error", Content = "Select a valid theme first"})
             end
