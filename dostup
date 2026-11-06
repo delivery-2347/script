@@ -5,7 +5,7 @@
 --    cocksucker = "cocksucker"
 --}
 return {
-    [4110423563] = "owner",
+    [4110423563] = "Owner",
     [5219743495] = "Friend",
     [3728738348] = "Friend",
     [8627161239] = "Friend",
