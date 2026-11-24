@@ -1,46 +1,43 @@
-game:GetService("CoreGui").CloneMenu.TopRight.CoinsFrame.CoinsDisplay.CoinImage.Image = "rbxassetid://86073487823375"
+local CloneMenu = game:GetService("CoreGui"):FindFirstChild("CloneMenu")
 
-local c = game:GetService("CoreGui")
-    .CloneMenu
-    .TopRight
-    .CoinsFrame
-    .CoinsDisplay
-    .Coins
+if CloneMenu then
+    local Coins = game:GetService("CoreGui").CloneMenu.TopRight.CoinsFrame.CoinsDisplay.Coins
 
-c.TextColor3 = Color3.new(1, 1, 1)
+    game:GetService("CoreGui").CloneMenu.TopRight.CoinsFrame.CoinsDisplay.CoinImage.Image = "rbxassetid://86073487823375"
+    Coins.TextColor3 = Color3.new(1, 1, 1)
 
-local g = Instance.new("UIGradient", c)
+    local UIGradient = Instance.new("UIGradient", Coins)
 
-g.Color = ColorSequence.new({
-    ColorSequenceKeypoint.new(0,    Color3.fromRGB(50, 150, 65)),
-    ColorSequenceKeypoint.new(0.16, Color3.fromRGB(45, 160, 60)),
-    ColorSequenceKeypoint.new(0.30, Color3.fromRGB(90, 220, 90)),
-    ColorSequenceKeypoint.new(0.42, Color3.fromRGB(180, 255, 180)),
-    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 255, 255)),
-    ColorSequenceKeypoint.new(0.58, Color3.fromRGB(180, 255, 180)),
-    ColorSequenceKeypoint.new(0.70, Color3.fromRGB(90, 220, 90)),
-    ColorSequenceKeypoint.new(0.84, Color3.fromRGB(45, 160, 60)),
-    ColorSequenceKeypoint.new(1,    Color3.fromRGB(50, 150, 65))
-})
+    UIGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0,    Color3.fromRGB(50, 150, 65)),
+        ColorSequenceKeypoint.new(0.16, Color3.fromRGB(45, 160, 60)),
+        ColorSequenceKeypoint.new(0.30, Color3.fromRGB(90, 220, 90)),
+        ColorSequenceKeypoint.new(0.42, Color3.fromRGB(180, 255, 180)),
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(0.58, Color3.fromRGB(180, 255, 180)),
+        ColorSequenceKeypoint.new(0.70, Color3.fromRGB(90, 220, 90)),
+        ColorSequenceKeypoint.new(0.84, Color3.fromRGB(45, 160, 60)),
+        ColorSequenceKeypoint.new(1,    Color3.fromRGB(50, 150, 65))
+    })
 
-g.Rotation = 20
+    UIGradient.Rotation = 20
 
-task.spawn(function()
-    local x = -1
+    task.spawn(function()
+        local x = -1
 
-    while true do
-        x += 0.005
+        while true do
+            x += 0.005
 
-        if x > 1 then
-            x = -1
+            if x > 1 then
+                x = -1
+            end
+
+            UIGradient.Offset = Vector2.new(x, 0)
+
+            task.wait()
         end
-
-        g.Offset = Vector2.new(x, 0)
-
-        task.wait()
-    end
-end)
-
+    end)
+end
 game:GetService("Players").LocalPlayer.PlayerGui.MenuGui.Menu.TabContents.Toys.Title.TitleText.Text = "CUCUMBER Toys"
 
 game:GetService("Players").LocalPlayer.PlayerGui.MenuGui.Menu.TabContents.Toys.Title.TitleText.TextColor3 = Color3.fromRGB(0, 255, 35)
@@ -134,3 +131,29 @@ game:GetService("Players").LocalPlayer.PlayerGui.MenuGui.Menu.TabContents.Shop.S
 game:GetService("Players").LocalPlayer.PlayerGui.MenuGui.Menu.TabContents.Shop.ShopInfoFrameHolder["Multi-Color Line"].BackgroundColor3 = Color3.fromRGB(0, 85, 0)
 
 game:GetService("Players").LocalPlayer.PlayerGui.MenuGui.Menu.TabContents.Shop.ShopInfoFrameHolder["Raised Toys Limit"].BackgroundColor3 = Color3.fromRGB(0, 85, 0)
+
+do 
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local FolderSpawnedInToys = LocalPlayer.Name .. "SpawnedInToys"
+    local Inventory = game:GetService("Workspace"):FindFirstChild(FolderSpawnedInToys)
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local MenuToys = ReplicatedStorage:FindFirstChild("MenuToys")
+    local DestroyToy = MenuToys:FindFirstChild("DestroyToy")
+
+    TextButtonclear = Instance.new("TextButtonclear", game:GetService("Players").LocalPlayer.PlayerGui.MenuGui.Menu.TabContents.ToyDestroy)
+    TextButtonclear.BorderSizePixel = 0
+    TextButtonclear.TextSize = 14
+    TextButtonclear.TextColor3 = Color3.fromRGB(0, 0, 0)
+    TextButtonclear.BackgroundColor3 = Color3.fromRGB(0, 176, 0)
+    TextButtonclear.FontFace = Font.new([[rbxasset://fonts/families/SourceSansPro.json]], Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+    TextButtonclear.Size = UDim2.new(0, 200, 0, 50)
+    TextButtonclear.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    TextButtonclear.Position = UDim2.new(0.7, 0, 0.8, 0)
+    TextButtonclear.Text = "clear all toy"
+    TextButtonclear.MouseButton1Click:Connect(function()
+        for _, obj in ipairs(Inventory:GetChildren()) do
+            DestroyToy:FireServer(obj)
+        end
+    end)
+end
