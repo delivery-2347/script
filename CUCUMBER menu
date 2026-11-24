@@ -141,7 +141,7 @@ do
     local MenuToys = ReplicatedStorage:FindFirstChild("MenuToys")
     local DestroyToy = MenuToys:FindFirstChild("DestroyToy")
 
-    TextButtonclear = Instance.new("TextButtonclear", game:GetService("Players").LocalPlayer.PlayerGui.MenuGui.Menu.TabContents.ToyDestroy)
+    TextButtonclear = Instance.new("TextButton", game:GetService("Players").LocalPlayer.PlayerGui.MenuGui.Menu.TabContents.ToyDestroy)
     TextButtonclear.BorderSizePixel = 0
     TextButtonclear.TextSize = 14
     TextButtonclear.TextColor3 = Color3.fromRGB(0, 0, 0)
